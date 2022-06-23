@@ -12,21 +12,6 @@ EncodeListKnown = []  # список точек людей, которые бы�
 classNames = []  # список точек людей, которые были декодированы
 IMAGES = []  # список изображений
 
-def BinarySearch(lys, val):  # обычный бинарный поиск
-    first = 0
-    last = len(lys)-1
-    index = -1
-    while (first <= last) and (index == -1):
-        mid = (first+last)//2
-        if lys[mid] == val:
-            index = mid
-        else:
-            if val<lys[mid]:
-                last = mid -1
-            else:
-                first = mid +1
-    return index
-
 
 def findEncodings(images):
     encodeList = []
@@ -35,6 +20,14 @@ def findEncodings(images):
         encode = face_recognition.face_encodings(img)[0]
         encodeList.append(encode)
     return encodeList
+
+
+def findEncode(image):
+
+    img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # ошибка
+    encode = face_recognition.face_encodings(img)[0]
+
+    return encode
 
 
 def markAttendance(name):
@@ -62,36 +55,30 @@ def vision():
     return [img, imgS, facesCurFrame, encodeCurFrame]
 
 
-def findEncode(image):
-
-    img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    encode = face_recognition.face_encodings(img)[0]
-
-    return encode
-
-
-def refuse():
+def refuse(if_save: bool):
 
     myList = os.listdir(PATH)
     print(myList)  # выводим список имеющихся фотографий людей в дирректории
 
     if_new_person = list(set(myList).difference(set(PREVIOUS_MYLIST)))  # переменная, которая узнает, был ли записан новый человек
 
-    if if_new_person:  # Если это первое включение программы, то идет анализ всех фотографий в дирректории
-        curImg = cv2.imread(f'{PATH}/{if_new_person[0]}')
-        IMAGES.append(curImg)
-        classNames.append(os.path.splitext(if_new_person[0])[0])
-        EncodeListKnown.append(findEncode([curImg]))  # переменная которая овечает за обработанные фотографии
-    else:                                                           # если это обновление программы для добавления нового человека                                      # то мы добавляем в массив распознанных людей только этого человека                                                             #  а фотографии всех оставшихся людей повторно не распознаем
-        for person in myList:
-            curImg = cv2.imread(f'{PATH}/{person}')
+    global EncodeListKnown
+    if save_or_not:
+        if if_new_person:    # Если это первое включение программы, то идет анализ всех фотографий в дирректории
+            curImg = cv2.imread(f'{PATH}/{if_new_person[0]}')
             IMAGES.append(curImg)
-            classNames.append(os.path.splitext(person)[0])
-        EncodeListKnown = findEncodings(IMAGES)  # переменная которая овечает за обработанные фотографии
+            classNames.append(os.path.splitext(if_new_person[0])[0])
+            global EncodeListKnown
+            EncodeListKnown.append(findEncode(curImg))  # переменная которая овечает за обработанные фотографии
+        else:                                                           # если это обновление программы для добавления нового человека                                      # то мы добавляем в массив распознанных людей только этого человека                                                             #  а фотографии всех оставшихся людей повторно не распознаем
+            for person in myList:
+                curImg = cv2.imread(f'{PATH}/{person}')
+                IMAGES.append(curImg)
+                classNames.append(os.path.splitext(person)[0])
+            EncodeListKnown = findEncodings(IMAGES)  # переменная которая овечает за обработанные фотографии
 
     print(classNames)  # выводим список людей
     print("Декодирование закончено")
-
 
 
 def refuse_camera():
@@ -104,7 +91,8 @@ def refuse_camera():
 
 if __name__ == '__main__':
 
-    refuse()
+    save_or_not = True
+    refuse(save_or_not)
     cap = refuse_camera()
 
     while True:
@@ -126,13 +114,13 @@ if __name__ == '__main__':
                 cv2.rectangle(img, (x1, y2 - 40), (x2, y2), (0, 255, 0), cv2.FILLED)
                 cv2.putText(img, name, (x1 + 6, y2 - 6), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 255, 255), 2) # рисуем прямоугольник и отображаем имя человека
                 markAttendance(name)  # записываем данные о человеке
-            else:
+            else:  #если человек не был найден в кодировках, то добавляем человека в нашу базу
                 cv2.imwrite('who.jpg', img)
-                remain()
+                save_or_not = remain()
                 cap.release()  #
                 cv2.destroyAllWindows()  # закрываем окна
                 print("Подождите, идет обновление ...")
-                encodeListKnown, classNames = refuse()
+                refuse(save_or_not)
                 cap.release()  #
                 cv2.destroyAllWindows()  # закрываем окна
                 cap = refuse_camera()

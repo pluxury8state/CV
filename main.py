@@ -103,7 +103,7 @@ if __name__ == '__main__':
                 cv2.putText(img, name, (x1 + 6, y2 - 6), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 255, 255), 2) # рисуем прямоугольник и отображаем имя человека
                 markAttendance(name)  # записываем данные о человеке
             else:
-                cv2.imwrite('who.png', img)
+                cv2.imwrite('who.jpg', img)
                 remain()
                 cap.release()  #
                 cv2.destroyAllWindows()  # закрываем окна

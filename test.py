@@ -5,25 +5,29 @@ from tkinter import Tk, Label, Entry, Button, Canvas
 import cv2
 from PIL import Image, ImageTk
 
-def clicked_cancel():
-    save_and_quit()
+
+def clicked_cancel():  # нажатие отмены
+    save_and_quit(False)
 
 
-def save_and_quit():
+def save_and_quit(param: bool):  # функция, которая нужна для успешного закрытия окон
+                                # параметр param нужен для того, чтобы знать записали ли мы человека в итоге или нет
     if window:
         window.destroy()
     if root:
         root.destroy()
+    global SAVE_OR_NOT
+    SAVE_OR_NOT = param
 
 
-def confirm(*args, **kwargs):
+def confirm(*args, **kwargs):  # кнопка подтверждения
     img = cv2.imread("who.jpg")
     name = txt.get()
     isWritten = cv2.imwrite(os.path.join(os.getcwd(), 'KnownFaces', name + '.jpg'), img)
-    save_and_quit()
+    save_and_quit(True)
 
 
-def clicked_save():
+def clicked_save():  # Окно сохранения человека
     global root
     root = Tk()
     root.geometry('400x200')
@@ -36,10 +40,11 @@ def clicked_save():
     bnn_3.grid(column=3, row=2)
 
 
-def remain():
-    global window
-    window = Tk()
-    root = txt = None
+def remain():  # Главное окно сохранения
+    global window, root
+    window = Tk()  # Главное окно сохранения
+    root = None  # Вспомогательное окно сохранения
+
     window.geometry('700x600')
     window.title("Был обнаружен новый человек")
 
@@ -60,9 +65,9 @@ def remain():
     btn_2 = Button(window, text="нет", bg="black", fg="red", command=clicked_cancel)
     btn_2.grid(column=1, row=600)
 
-
     window.mainloop()
+    return SAVE_OR_NOT
 
 
 if __name__ == "__main__":
-    remain()
+    print(remain())
